@@ -1,0 +1,17 @@
+# Node dependencies
+node_modules/
+
+# TypeScript build
+dist/
+
+# Environment variables
+.env
+
+# IDE settings
+.vscode/
+.idea/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
