@@ -14,11 +14,30 @@ datasource db {
 }
 
 model TierList {
-  id          Int      @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
   title       String
   description String?
-  visibility  String   @default("private")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  visibility  String     @default("private")
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  tiers       Tier[]     @relation("TierListToTier")
 }
 
+model Tier {
+  id          Int        @id @default(autoincrement())
+  name        String     // e.g. "S", "A", "B", "C"
+  order       Int        // determines row order
+  tierList    TierList   @relation("TierListToTier", fields: [tierListId], references: [id])
+  tierListId  Int
+  items       TierItem[]
+}
+
+model TierItem {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  imageUrl    String?
+  tier        Tier     @relation(fields: [tierId], references: [id])
+  tierId      Int
+}
