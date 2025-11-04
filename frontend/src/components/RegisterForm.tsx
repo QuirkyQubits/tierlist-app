@@ -8,7 +8,7 @@ export default function RegisterForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const navigate = useNavigate(); // 👈 new hook
+  const navigate = useNavigate();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -72,7 +72,6 @@ export default function RegisterForm() {
       {success && <p className="text-green-500 mt-2">{success}</p>}
       {error && <p className="text-red-500 mt-2">{error}</p>}
 
-      {/* 👇 Add login link */}
       <p className="mt-4 text-sm text-gray-600">
         Already have an account?{" "}
         <Link

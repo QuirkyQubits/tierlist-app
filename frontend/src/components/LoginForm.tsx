@@ -62,9 +62,8 @@ export default function LoginForm({ onLogin }: { onLogin: () => void }) {
 
       {error && <p className="text-red-500 mt-2">{error}</p>}
 
-      {/* 👇 Add this block */}
       <p className="mt-4 text-sm text-gray-600">
-        Don’t have an account?{" "}
+        Don't have an account?{" "}
         <Link
           to="/register"
           className="text-emerald-600 hover:underline font-medium"
