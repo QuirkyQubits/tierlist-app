@@ -4,7 +4,7 @@ import { prisma } from "../utils/prisma.js";
 
 const router = express.Router();
 
-// Create a new tier list (requires auth)
+
 router.post("/new-tierlist", auth, async (req: AuthRequest, res) => {
   const userId = req.user!.userId;
   const { title, description, visibility = "PRIVATE", tiers = [] } = req.body;
@@ -40,7 +40,6 @@ router.post("/new-tierlist", auth, async (req: AuthRequest, res) => {
 });
 
 
-// Get current user's tier lists
 router.get("/my-tierlists", auth, async (req: AuthRequest, res) => {
   const userId = req.user!.userId;
   const lists = await prisma.tierList.findMany({
@@ -52,7 +51,6 @@ router.get("/my-tierlists", auth, async (req: AuthRequest, res) => {
 });
 
 
-// Public lists
 router.get("/public", async (_, res) => {
   const lists = await prisma.tierList.findMany({
     where: { visibility: "PUBLIC" },
@@ -63,7 +61,6 @@ router.get("/public", async (_, res) => {
 });
 
 
-// Get single tier list (public or owned)
 router.get("/:id", auth, async (req: AuthRequest, res) => {
   const id = Number(req.params.id);
   const userId = req.user!.userId;
@@ -91,7 +88,6 @@ router.get("/:id", auth, async (req: AuthRequest, res) => {
 });
 
 
-// Delete a tier list (owner only)
 router.delete("/:id", auth, async (req: AuthRequest, res) => {
   const id = Number(req.params.id);
   const userId = req.user!.userId;
