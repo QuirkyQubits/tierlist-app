@@ -2,6 +2,7 @@ import express from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { prisma } from "../utils/prisma.js";
+import { auth, type AuthRequest } from "../auth.js"; // adjust import path if needed
 
 const router = express.Router();
 
@@ -43,6 +44,20 @@ router.post("/login", async (req, res) => {
   });
 
   res.json({ token, user });
+});
+
+router.get("/whoami", auth, async (req: AuthRequest, res) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user!.userId },
+      select: { id: true, email: true, username: true },
+    });
+    if (!user) return res.status(404).json({ error: "User not found" });
+    res.json(user);
+  } catch (err) {
+    console.error("Error in /whoami:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 export default router;
