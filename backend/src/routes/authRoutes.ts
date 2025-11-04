@@ -24,7 +24,7 @@ router.post("/register", async (req, res) => {
     res.json({ token, user });
   } catch (err) {
     console.error("❌ Registration error:", err);
-    res.status(400).json({ error: "Email already exists" });
+    res.status(400).json({ error: "Registration failed" });
   }
 });
 

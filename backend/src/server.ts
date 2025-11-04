@@ -9,7 +9,12 @@ import itemRoutes from "./routes/itemRoutes.js";
 
 dotenv.config();
 const app = express();
-app.use(cors());
+
+app.use(cors({
+  origin: "http://localhost:5173",  // your frontend’s URL
+  credentials: true,                // allow cookies / auth headers
+}));
+
 app.use(express.json());
 
 app.use("/uploads", express.static(uploadDir));

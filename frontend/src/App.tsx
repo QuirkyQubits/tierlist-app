@@ -16,7 +16,7 @@ export default function App() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await api.get("/auth/whoami");
+        const res = await api.get("/api/whoami");
         if (res.data?.userId) setIsLoggedIn(true);
       } catch {
         // No active session
@@ -44,7 +44,10 @@ export default function App() {
           path="/login"
           element={<LoginForm onLogin={() => setIsLoggedIn(true)} />}
         />
-        <Route path="/register" element={<RegisterForm />} />
+        <Route
+          path="/register"
+          element={<RegisterForm />}
+        />
 
         {/* Protected routes */}
         <Route
@@ -60,6 +63,15 @@ export default function App() {
           element={
             <RequireAuth isLoggedIn={isLoggedIn}>
               <TierListViewPage />
+            </RequireAuth>
+          }
+        />
+
+        <Route
+          path="/my-tierlists"
+          element={
+            <RequireAuth isLoggedIn={isLoggedIn}>
+              <MyTierListsPage />
             </RequireAuth>
           }
         />
