@@ -7,6 +7,7 @@ import RegisterForm from "./components/RegisterForm";
 import NavBar from "./components/NavBar";
 import { RequireAuth } from "./auth/RequireAuth";
 import { api } from "./lib/axios";
+import TierListEditPage from "./components/TierListEditPage";
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -66,6 +67,15 @@ export default function App() {
             </RequireAuth>
           }
         />
+        <Route
+          path="/tierlist/:id/edit"
+          element={
+            <RequireAuth isLoggedIn={isLoggedIn}>
+              <TierListEditPage />
+            </RequireAuth>
+          }
+        />
+
 
         <Route
           path="/my-tierlists"
