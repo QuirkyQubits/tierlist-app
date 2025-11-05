@@ -1,10 +1,3 @@
-import { useDroppable } from "@dnd-kit/core";
-import {
-  SortableContext,
-  rectSortingStrategy,
-  useSortable,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 import TierItem from "./TierItem";
 import type { TierItemType } from "./TierListEditor";
 
@@ -14,53 +7,77 @@ interface TierRowProps {
     name: string;
     items: TierItemType[];
   };
+  onDropItem: (targetTierId: string, itemId: string) => void;
+  onReorderItem: (
+    targetTierId: string,
+    targetItemId: string,
+    itemId: string,
+    before: boolean
+  ) => void;
+  draggingItemId: string | null;
+  setDraggingItemId: (id: string | null) => void;
+  hoverTarget: { tierId: string; targetId: string; before: boolean } | null;
+  setHoverTarget: (hover: { tierId: string; targetId: string; before: boolean } | null) => void;
+  setDraggingItem: (item: TierItemType | null) => void;       // ✅ added
+  setDragPosition: (pos: { x: number; y: number } | null) => void; // ✅ added
 }
 
-export default function TierRow({ tier }: TierRowProps) {
-  const { setNodeRef } = useDroppable({
-    id: tier.id,
-    data: { tierId: tier.id },
-  });
+export default function TierRow({
+  tier,
+  onDropItem,
+  onReorderItem,
+  draggingItemId,
+  setDraggingItemId,
+  hoverTarget,
+  setHoverTarget,
+  setDraggingItem,
+  setDragPosition,
+}: TierRowProps) {
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => e.preventDefault();
+
+  const handleDropEmpty = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const itemId = e.dataTransfer.getData("text/plain");
+    onDropItem(tier.id, itemId);
+  };
 
   return (
     <div
-      ref={setNodeRef}
       className="flex flex-row bg-gray-800 rounded-md overflow-x-auto p-2 items-start min-h-[150px]"
+      onDragOver={handleDragOver}
+      onDrop={handleDropEmpty}
     >
-      {/* label */}
       <div className="flex flex-col items-center justify-start w-14 mr-2">
         <span className="text-xl font-bold mb-1">{tier.name}</span>
       </div>
 
-      {/* items */}
-      <SortableContext
-        items={tier.items.map((i) => i.id)}
-        strategy={rectSortingStrategy}
-      >
-        <div className="flex flex-wrap gap-2 flex-1">
-          {tier.items.map((item) => (
-            <SortableItem key={item.id} item={item} />
-          ))}
-        </div>
-      </SortableContext>
-    </div>
-  );
-}
+      <div className="flex flex-wrap gap-2 flex-1">
+        {tier.items.map((item) => {
+          const isHoverBefore =
+            hoverTarget?.tierId === tier.id &&
+            hoverTarget?.targetId === item.id &&
+            hoverTarget?.before;
+          const isHoverAfter =
+            hoverTarget?.tierId === tier.id &&
+            hoverTarget?.targetId === item.id &&
+            !hoverTarget?.before;
 
-function SortableItem({ item }: { item: TierItemType }) {
-  const { attributes, listeners, setNodeRef, transform, transition } =
-    useSortable({
-      id: item.id,
-    });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
-
-  return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      <TierItem item={item} />
+          return (
+            <TierItem
+              key={item.id}
+              item={item}
+              tierId={tier.id}
+              onReorderItem={onReorderItem}
+              setDraggingItemId={setDraggingItemId}
+              setDraggingItem={setDraggingItem}
+              setDragPosition={setDragPosition}
+              setHoverTarget={setHoverTarget}
+              isHoverBefore={isHoverBefore}
+              isHoverAfter={isHoverAfter}
+            />
+          );
+        })}
+      </div>
     </div>
   );
 }
