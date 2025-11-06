@@ -1,5 +1,5 @@
 // dragUtils.ts
-import type { Card, Tier } from "../components/TierListEditor";
+import type { Card, Tier } from "../components/TierListEditor/types";
 
 export interface DragState {
   from: "cards" | "tier";

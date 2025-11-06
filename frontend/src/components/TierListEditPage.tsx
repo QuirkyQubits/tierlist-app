@@ -1,5 +1,5 @@
 import { useParams } from "react-router-dom";
-import TierListEditor from "./TierListEditor";
+import TierListEditor from "./TierListEditor/TierListEditor";
 
 export default function TierListEditPage() {
   const { id } = useParams();
