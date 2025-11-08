@@ -31,7 +31,7 @@ export default function TierListEditor() {
       "https://placehold.co/110x165/darkorchid/fff",
       "https://placehold.co/220/bisque/fff",
       "https://placehold.co/135x150/lightseagreen/fff",
-    ].map((src) => ({ id: makeId("card"), src }))
+    ].map((src) => ({ id: makeId("card"), src: src, name: "Default Name" }))
   );
 
   const [tiers, setTiers] = useState<Tier[]>(() =>
