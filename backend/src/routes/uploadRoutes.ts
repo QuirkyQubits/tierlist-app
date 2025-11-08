@@ -2,9 +2,9 @@ import express from "express";
 import multer from "multer";
 import sharp from "sharp";
 import path from "path";
-import fs from "fs";
 import { uploadDir } from "../utils/paths.js";
 import { auth, type AuthRequest } from "../auth.js";
+import { promises as fs } from "fs";
 
 const router = express.Router();
 
@@ -32,7 +32,7 @@ router.post("/", auth, upload.single("image"), async (req: AuthRequest, res) => 
       .jpeg({ quality: 80 })
       .toFile(outputPath);
 
-    fs.unlinkSync(inputPath);
+    await fs.unlink(inputPath);
     const filePath = `/uploads/${resizedFilename}`;
     res.json({ message: "Upload successful", path: filePath });
   } catch (err) {
