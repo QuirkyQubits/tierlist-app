@@ -104,6 +104,8 @@ export default function TierListEditor() {
   function positionGhost(e: DragEvent) {
     const ghost = document.querySelector(".drag-ghost") as HTMLElement | null;
     const target = e.target as HTMLElement | null;
+    // console.log(`target: ${target?.getHTML()}`);
+
     const draggedImage = document.querySelector(".dragging") as HTMLElement | null;
 
     if (!ghost || !target || !draggedImage) return;
@@ -113,6 +115,8 @@ export default function TierListEditor() {
       const mid = left + width / 2;
 
       const container = target.closest(".items");
+      // console.log(`container: ${container?.getHTML()}`);
+
       if (container && ghost.parentElement !== container) container.appendChild(ghost);
 
       if (e.clientX < mid) target.before(ghost);
@@ -133,13 +137,15 @@ export default function TierListEditor() {
     setDragging({ from, tierId, card });
     suppressDefaultDragImage(e);
 
-    const img = e.currentTarget as HTMLElement;
-    img.classList.add("dragging");
+    const item = e.currentTarget as HTMLElement;
+    item.classList.add("dragging");
 
-    const ghost = document.createElement("img");
-    ghost.src = card.src;
-    ghost.className =
-      "drag-ghost w-20 h-20 object-cover rounded border border-zinc-600 opacity-25 pointer-events-none";
+    const ghost = item.cloneNode(true) as HTMLElement;
+    ghost.classList.add("drag-ghost");
+    ghost.classList.remove("dragging");
+    ghost.style.opacity = "0.25";
+    ghost.style.pointerEvents = "none";
+
     document.body.appendChild(ghost);
   };
 
