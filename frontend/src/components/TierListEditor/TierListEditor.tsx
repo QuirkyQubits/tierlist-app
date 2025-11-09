@@ -1,21 +1,65 @@
 import React, { useMemo, useState } from "react";
-import {
-  removeCardFromTiers,
-  insertCardIntoTier,
-  moveCardBetween,
-  suppressDefaultDragImage,
-  type DragState,
-} from "../../utils/dragUtils";
 import { getColorByIndex } from "./constants";
 import type { Card, Tier } from "./types";
 import TierRow from "./TierRow";
 import TierSettingsModal from "./TierSettingsModal";
 
-function makeId(prefix = "id") {
-  return `${prefix}-${Math.random().toString(36).slice(2, 9)}`;
+interface DragState {
+  from: "cards" | "tier";
+  tierId?: string;
+  card: Card;
+}
+
+/** Remove the dragged card from all tiers */
+function removeCardFromTiers(
+  tiers: Tier[],
+  cardId: string
+): Tier[] {
+  return tiers.map((tier) => ({
+    ...tier,
+    items: tier.items.filter((i) => i.id !== cardId),
+  }));
+}
+
+/** Insert a card into a tier at the right spot */
+function insertCardIntoTier(
+  tiers: Tier[],
+  tierId: string,
+  card: Card,
+  targetCardId?: string,
+  before = true
+): Tier[] {
+  return tiers.map((tier) => {
+    if (tier.id !== tierId) return tier;
+
+    const items = [...tier.items];
+    const targetIndex = targetCardId
+      ? items.findIndex((i) => i.id === targetCardId)
+      : -1;
+
+    if (targetIndex === -1) {
+      // append at the end
+      items.push(card);
+    } else {
+      // insert before or after the found card
+      const insertAt = before ? targetIndex : targetIndex + 1;
+      items.splice(insertAt, 0, card);
+    }
+
+    return { ...tier, items };
+  });
+}
+
+/** Disable browser ghost drag image */
+function suppressDefaultDragImage(e: React.DragEvent) {
+  const empty = document.createElement("div");
+  e.dataTransfer?.setDragImage(empty, 0, 0);
 }
 
 export default function TierListEditor() {
+  const nextCardId = React.useRef(1);
+  const nextTierId = React.useRef(1);
+
   const [cards, setCards] = useState<Card[]>(() =>
     [
       "https://placehold.co/100/orange/fff",
@@ -30,12 +74,16 @@ export default function TierListEditor() {
       "https://placehold.co/110x165/darkorchid/fff",
       "https://placehold.co/220/bisque/fff",
       "https://placehold.co/135x150/lightseagreen/fff",
-    ].map((src) => ({ id: makeId("card"), src: src, name: "<name>" }))
+    ].map((src) => ({
+      id: String(nextCardId.current++),
+      src: src,
+      name: "<name>"
+    }))
   );
 
   const [tiers, setTiers] = useState<Tier[]>(() =>
     ["S", "A", "B", "C", "D"].map((label, i) => ({
-      id: makeId("tier"),
+      id: String(nextTierId.current++),
       label,
       color: getColorByIndex(i),
       items: [],
@@ -67,7 +115,7 @@ export default function TierListEditor() {
   const addTier = (label = "Change me", insertIndex?: number) =>
     setTiers((prev) => {
       const color = getColorByIndex(prev.length);
-      const newTier: Tier = { id: makeId("tier"), label, color, items: [], isUnsorted: false };
+      const newTier: Tier = { id: String(nextTierId.current++), label, color, items: [], isUnsorted: false };
       const copy = [...prev];
       insertIndex != null ? copy.splice(insertIndex, 0, newTier) : copy.push(newTier);
       return copy;

@@ -1,4 +1,3 @@
-import React from "react";
 import type { Tier } from "./types";
 import { TIER_COLORS } from "./constants";
 
