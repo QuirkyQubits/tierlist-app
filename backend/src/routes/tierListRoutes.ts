@@ -24,6 +24,7 @@ router.post("/new-tierlist", auth, async (req: AuthRequest, res) => {
         tiers: {
           create: tiers.map((tier: any) => ({
             name: tier.name,
+            color: tier.color,
             order: tier.order,
             items: { create: tier.items || [] },
           })),
