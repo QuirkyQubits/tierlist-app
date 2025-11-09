@@ -9,4 +9,5 @@ export type Tier = {
     label: string;
     color: string;
     items: Card[];
+    isUnsorted: boolean;
 };

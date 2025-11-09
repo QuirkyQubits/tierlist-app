@@ -27,50 +27,67 @@ export function removeCardFromTiers(
 /** Insert a card into a tier at the right spot */
 export function insertCardIntoTier(
   tiers: Tier[],
-  targetTierId: string,
+  tierId: string,
   card: Card,
-  targetCardId?: string,
-  before?: boolean
+  targetCardId: string,
+  before: boolean
 ): Tier[] {
-  return tiers.map((tier) => {
-    if (tier.id !== targetTierId) return tier;
-    const items = [...tier.items];
-    const existingIdx = items.findIndex((i) => i.id === card.id);
-    if (existingIdx !== -1) items.splice(existingIdx, 1); // ensure removed first
+  // Unsorted zone should not modify tiers
+  if (tierId === "cards") return tiers;
 
-    if (targetCardId) {
-      const idx = items.findIndex((i) => i.id === targetCardId);
-      const insertAt = before ? idx : idx + 1;
-      items.splice(insertAt, 0, card);
-    } else {
-      items.push(card);
-    }
-    return { ...tier, items };
+  const copy = tiers.map((t) => {
+    if (t.id !== tierId) return t;
+
+    const items = [...t.items];
+    const targetIdx = items.findIndex((c) => c.id === targetCardId);
+    if (targetIdx === -1) return t;
+
+    const insertAt = before ? targetIdx : targetIdx + 1;
+    items.splice(insertAt, 0, card);
+    return { ...t, items };
   });
+
+  return copy;
 }
+
 
 /** Move a card from source to target (general purpose handler) */
 export function moveCardBetween(
   tiers: Tier[],
   cards: Card[],
   dragging: DragState,
-  targetTierId?: string
+  targetTierId: string
 ): { tiers: Tier[]; cards: Card[] } {
-  let newTiers = removeCardFromTiers(tiers, dragging.card.id);
+  const { from, card } = dragging;
+
+  // Start by removing the card from any tier
+  let newTiers = removeCardFromTiers(tiers, card.id);
   let newCards = [...cards];
 
+  // If the card came from the unsorted zone, remove it there too
+  if (from === "cards") {
+    newCards = newCards.filter((c) => c.id !== card.id);
+  }
+
+  // Now decide where to put it
   if (targetTierId === "cards") {
-    // move to unsorted
-    if (!newCards.some((c) => c.id === dragging.card.id))
-      newCards.push(dragging.card);
-  } else if (targetTierId) {
-    // move to a tier
-    newTiers = insertCardIntoTier(newTiers, targetTierId, dragging.card);
-    newCards = newCards.filter((c) => c.id !== dragging.card.id);
+    // Dropped into unsorted zone
+    newCards.push(card);
+  } else {
+    // Dropped into a regular tier
+    const targetIdx = newTiers.findIndex((t) => t.id === targetTierId);
+    if (targetIdx !== -1) {
+      const updatedTier = {
+        ...newTiers[targetIdx],
+        items: [...newTiers[targetIdx].items, card],
+      };
+      newTiers[targetIdx] = updatedTier;
+    }
   }
 
   return { tiers: newTiers, cards: newCards };
 }
+
 
 /** Disable browser ghost drag image */
 export function suppressDefaultDragImage(e: React.DragEvent) {

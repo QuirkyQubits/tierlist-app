@@ -9,7 +9,6 @@ import {
 import { getColorByIndex } from "./constants";
 import type { Card, Tier } from "./types";
 import TierRow from "./TierRow";
-import UnsortedZone from "./UnsortedZone";
 import TierSettingsModal from "./TierSettingsModal";
 
 function makeId(prefix = "id") {
@@ -40,6 +39,7 @@ export default function TierListEditor() {
       label,
       color: getColorByIndex(i),
       items: [],
+      isUnsorted: false,
     }))
   );
 
@@ -67,7 +67,7 @@ export default function TierListEditor() {
   const addTier = (label = "Change me", insertIndex?: number) =>
     setTiers((prev) => {
       const color = getColorByIndex(prev.length);
-      const newTier: Tier = { id: makeId("tier"), label, color, items: [] };
+      const newTier: Tier = { id: makeId("tier"), label, color, items: [], isUnsorted: false };
       const copy = [...prev];
       insertIndex != null ? copy.splice(insertIndex, 0, newTier) : copy.push(newTier);
       return copy;
@@ -186,16 +186,43 @@ export default function TierListEditor() {
     const rect = (e.target as HTMLElement).getBoundingClientRect();
     const before = e.clientX < rect.left + rect.width / 2;
 
+    // special case: unsorted pseudo-tier
+    if (tierId === "cards") {
+      // remove from any tier it might have been in
+      const newTiers = removeCardFromTiers(tiers, dragging.card.id);
+
+      // start from cards but remove the dragged one
+      let newCards = cards.filter((c) => c.id !== dragging.card.id);
+
+      // find where to insert relative to the target card
+      const targetIdx = newCards.findIndex((c) => c.id === targetCardId);
+      if (targetIdx === -1) {
+        // if somehow we didn't find it, just push
+        newCards.push(dragging.card);
+      } else {
+        const insertAt = before ? targetIdx : targetIdx + 1;
+        newCards.splice(insertAt, 0, dragging.card);
+      }
+
+      setTiers(newTiers);
+      setCards(newCards);
+      endDrag();
+      return;
+    }
+
+    // normal tier-to-tier logic
     let newTiers = removeCardFromTiers(tiers, dragging.card.id);
     newTiers = insertCardIntoTier(newTiers, tierId, dragging.card, targetCardId, before);
     setTiers(newTiers);
 
+    // if it came from unsorted, remove it from cards
     if (dragging.from === "cards") {
       setCards((p) => p.filter((c) => c.id !== dragging.card.id));
     }
 
     endDrag();
   };
+
 
   const handleDeleteCard = (tierId: string | undefined, cardId: string) => {
     if (tierId) {
@@ -209,49 +236,6 @@ export default function TierListEditor() {
       // Delete from unsorted
       setCards((prev) => prev.filter((c) => c.id !== cardId));
     }
-  };
-
-  const handleDragOverUnsorted = (e: React.DragEvent) => {
-    e.preventDefault();
-    if (dragging) positionGhost(e.nativeEvent);
-  };
-
-  const dropOnUnsorted = () => {
-    if (!dragging) return;
-
-    const { tiers: newTiers, cards: newCards } = moveCardBetween(
-      tiers,
-      cards,
-      dragging,
-      "cards"
-    );
-    setTiers(newTiers);
-    setCards(newCards);
-    endDrag();
-  };
-
-  const handleDropOnUnsortedCard = (e: React.DragEvent, targetCardId: string) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!dragging) return;
-
-    const rect = (e.target as HTMLElement).getBoundingClientRect();
-    const before = e.clientX < rect.left + rect.width / 2;
-
-    const newTiers = removeCardFromTiers(tiers, dragging.card.id);
-    let newCards = cards.filter((c) => c.id !== dragging.card.id);
-    const targetIdx = cards.findIndex((c) => c.id === targetCardId);
-
-    if (targetIdx === -1) {
-      newCards.push(dragging.card);
-    } else {
-      const insertAt = before ? targetIdx : targetIdx + 1;
-      newCards.splice(insertAt, 0, dragging.card);
-    }
-
-    setTiers(newTiers);
-    setCards(newCards);
-    endDrag();
   };
 
   // ---------------- Render ----------------
@@ -283,16 +267,28 @@ export default function TierListEditor() {
         ))}
       </div>
 
-      {/* Unsorted cards */}
-      <UnsortedZone
-        cards={cards}
-        beginDrag={beginDrag}
-        endDrag={endDrag}
-        handleDragOver={handleDragOverUnsorted}
-        dropOnUnsorted={dropOnUnsorted}
-        handleDropOnCard={handleDropOnUnsortedCard}
-        onDelete={handleDeleteCard}
-      />
+      {/* --- Unsorted zone as pseudo-tier --- */}
+      <div className="mt-6">
+        <TierRow
+          key="unsorted"
+          tier={{
+            id: "cards",
+            label: "Unsorted",
+            color: "transparent",
+            items: cards,
+            isUnsorted: true,
+          }}
+          onOpenSettings={() => {}}
+          onMoveTier={() => {}}
+          beginDrag={beginDrag}
+          endDrag={endDrag}
+          handleDragOverTier={handleDragOverTier}
+          handleDragOverCard={handleDragOverCard}
+          dropOnTier={dropOnTier}
+          dropOnCard={dropOnCard}
+          onDelete={handleDeleteCard}
+        />
+      </div>
 
       {/* Settings modal */}
       {isSettingsOpen && activeTier && (
