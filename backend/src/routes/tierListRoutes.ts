@@ -14,6 +14,8 @@ router.post("/new-tierlist", auth, async (req: AuthRequest, res) => {
       .status(400)
       .json({ error: "Tier list must have a title and tiers." });
 
+  console.log("🧾 Incoming payload:", JSON.stringify(req.body, null, 2));
+
   try {
     const newTierList = await prisma.tierList.create({
       data: {
@@ -26,7 +28,12 @@ router.post("/new-tierlist", auth, async (req: AuthRequest, res) => {
             name: tier.name,
             color: tier.color,
             order: tier.order,
-            items: { create: tier.items || [] },
+            items: {
+              create: (tier.items || []).map((item: any) => ({
+                name: item.name,
+                imageUrl: item.imageUrl,
+              })),
+            },
           })),
         },
       },

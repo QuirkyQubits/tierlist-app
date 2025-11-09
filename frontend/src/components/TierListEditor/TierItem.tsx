@@ -13,6 +13,13 @@ interface Props {
   onRename: (tierId: string | undefined, cardId: string, newName: string) => void;
 }
 
+const getImageSrc = (src: string) => {
+  if (src.startsWith("/uploads/")) {
+    return `${import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"}${src}`;
+  }
+  return src;
+};
+
 export default function TierItem({
   card,
   from,
@@ -40,7 +47,8 @@ export default function TierItem({
       }}
     >
       <img
-        src={card.src}
+        src={getImageSrc(card.src)}
+        alt={card.name}
         draggable
         onDragStart={(e) => beginDrag(from, tierId, card, e)}
         onDragEnd={endDrag}

@@ -69,26 +69,7 @@ export default function TierListEditor() {
     setToast({ type, message });
   }
 
-  const [cards, setCards] = useState<Card[]>(() =>
-    [
-      "https://placehold.co/100/orange/fff",
-      "https://placehold.co/200/dodgerblue/fff",
-      "https://placehold.co/150x100/green/fff",
-      "https://placehold.co/120x150/red/fff",
-      "https://placehold.co/220x190/purple/fff",
-      "https://placehold.co/300x120/teal/fff",
-      "https://placehold.co/145/pink/fff",
-      "https://placehold.co/90/hotpink/fff",
-      "https://placehold.co/145/brown/fff",
-      "https://placehold.co/110x165/darkorchid/fff",
-      "https://placehold.co/220/bisque/fff",
-      "https://placehold.co/135x150/lightseagreen/fff",
-    ].map((src) => ({
-      id: String(nextCardId.current++),
-      src: src,
-      name: "<name>"
-    }))
-  );
+  const [cards, setCards] = useState<Card[]>([]);
 
   const [tiers, setTiers] = useState<Tier[]>(() =>
     ["S", "A", "B", "C", "D"].map((label, i) => ({
@@ -127,7 +108,9 @@ export default function TierListEditor() {
           let imageUrl = card.src;
 
           // Upload image if it's new (blob or data URL)
-          if (!card.id && (card.src.startsWith("blob:") || card.src.startsWith("data:image"))) {
+          if (!card.backendId &&
+              (card.src.startsWith("blob:") || card.src.startsWith("data:image"))
+            ) {
             const blob = await fetch(card.src).then((r) => r.blob());
             const formData = new FormData();
             formData.append("image", blob, `${card.name}.jpg`);
@@ -140,14 +123,14 @@ export default function TierListEditor() {
           }
 
           items.push({
-            id: card.id ? Number(card.id) : undefined, // backend IDs are numeric
+            id: card.backendId,
             name: card.name,
             imageUrl,
           });
         }
 
         preparedTiers.push({
-          id: tier.id ? Number(tier.id) : undefined,
+          id: tier.backendId,
           name: tier.label,
           color: tier.color,
           order: i,
@@ -176,8 +159,24 @@ export default function TierListEditor() {
 
       // Replace local state with latest data from backend
       const updated = res.data;
-      setTiers(updated.tiers);
+
+      // Rebuild local state so backend IDs are stored in backendId fields
+      setTiers(updated.tiers.map((t: any) => ({
+        id: String(nextTierId.current++),
+        backendId: t.id,
+        label: t.name,
+        color: t.color,
+        items: (t.items || []).map((c: any) => ({
+          id: String(nextCardId.current++),
+          backendId: c.id,
+          src: c.imageUrl,
+          name: c.name,
+        })),
+        isUnsorted: false,
+      })));
+
       setTitle(updated.title);
+      setTierListId(updated.id);
     } catch (err: any) {
       console.error("❌ Failed to save tier list:", err);
       showToast("error", "Failed to save tier list");
@@ -411,6 +410,13 @@ export default function TierListEditor() {
   };
 
   const handleDeleteCard = (tierId: string | undefined, cardId: string) => {
+    const numericId = Number(cardId);
+    if (!isNaN(numericId)) {
+      setDeletedItemIds((prev) =>
+        prev.includes(numericId) ? prev : [...prev, numericId]
+      );
+    }
+
     if (tierId) {
       // Delete from tier
       setTiers((prev) =>
@@ -423,6 +429,7 @@ export default function TierListEditor() {
       setCards((prev) => prev.filter((c) => c.id !== cardId));
     }
   };
+
 
   const handleRenameCard = (tierId: string | undefined, cardId: string, newName: string) => {
     if (tierId) {
@@ -460,6 +467,7 @@ export default function TierListEditor() {
         onAdd={(name, src) => {
           const newCard = {
             id: String(nextCardId.current++),
+            backendId: undefined,
             src,
             name,
           };
