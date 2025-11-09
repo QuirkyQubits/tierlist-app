@@ -5,7 +5,7 @@ import TierRow from "./TierRow";
 import TierSettingsModal from "./TierSettingsModal";
 import AddCardForm from "./AddCardForm";
 import Toast from "./Toast";
-
+import { api } from "../../lib/axios";
 
 interface DragState {
   from: "cards" | "tier";
@@ -105,11 +105,85 @@ export default function TierListEditor() {
   const [editingLabel, setEditingLabel] = useState("");
   const [dragging, setDragging] = useState<DragState | null>(null);
   const [title, setTitle] = useState("My Tier List");
+  const [tierListId, setTierListId] = useState<number | null>(null);
+  const [deletedItemIds, setDeletedItemIds] = useState<number[]>([]);
 
   const activeTier = useMemo(
     () => tiers.find((t) => t.id === activeTierId) ?? null,
     [activeTierId, tiers]
   );
+
+  // ---------------- Save logic ----------------
+  async function saveTierList() {
+    try {
+      // Build the payload from current React state
+      const deletedItemIds: number[] = []; // if you later track deletions, include them here
+
+      const preparedTiers = [];
+      for (const [i, tier] of tiers.entries()) {
+        const items = [];
+
+        for (const card of tier.items) {
+          let imageUrl = card.src;
+
+          // Upload image if it's new (blob or data URL)
+          if (!card.id && (card.src.startsWith("blob:") || card.src.startsWith("data:image"))) {
+            const blob = await fetch(card.src).then((r) => r.blob());
+            const formData = new FormData();
+            formData.append("image", blob, `${card.name}.jpg`);
+
+            const uploadRes = await api.post("/api/upload", formData, {
+              headers: { "Content-Type": "multipart/form-data" },
+            });
+
+            imageUrl = uploadRes.data.path;
+          }
+
+          items.push({
+            id: card.id ? Number(card.id) : undefined, // backend IDs are numeric
+            name: card.name,
+            imageUrl,
+          });
+        }
+
+        preparedTiers.push({
+          id: tier.id ? Number(tier.id) : undefined,
+          name: tier.label,
+          color: tier.color,
+          order: i,
+          items,
+        });
+      }
+
+      const payload = {
+        title,
+        tiers: preparedTiers,
+        deletedItemIds,
+      };
+
+      // Choose the correct endpoint
+      let res;
+      if (!tierListId) {
+        // New tier list
+        res = await api.post("/api/tierlists/new-tierlist", payload);
+        setTierListId(res.data.id);
+        showToast("success", "Tier list created!");
+      } else {
+        // Existing tier list
+        res = await api.put(`/api/tierlists/${tierListId}`, payload);
+        showToast("success", "Tier list updated!");
+      }
+
+      // Replace local state with latest data from backend
+      const updated = res.data;
+      setTiers(updated.tiers);
+      setTitle(updated.title);
+    } catch (err: any) {
+      console.error("❌ Failed to save tier list:", err);
+      showToast("error", "Failed to save tier list");
+    }
+  }
+
 
   // ---------------- Tier actions ----------------
   const openSettings = (tier: Tier) => {
@@ -374,6 +448,13 @@ export default function TierListEditor() {
       >
         TierList Maker
       </h1>
+
+      <button
+        onClick={saveTierList}
+        className="self-center bg-green-600 hover:bg-green-500 px-4 py-2 rounded text-sm font-medium"
+      >
+        💾 Save Tier List
+      </button>
 
       <AddCardForm
         onAdd={(name, src) => {
