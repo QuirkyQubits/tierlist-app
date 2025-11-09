@@ -54,8 +54,7 @@ model Tier {
 model TierItem {
   id          Int     @id @default(autoincrement())
   name        String
-  description String?
-  imageUrl    String?
+  imageUrl    String
   tier        Tier    @relation(fields: [tierId], references: [id], onDelete: Cascade)
   tierId      Int
 }

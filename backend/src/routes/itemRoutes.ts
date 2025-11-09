@@ -5,15 +5,24 @@ import { prisma } from "../utils/prisma.js";
 const router = express.Router();
 
 
-router.get("/:id", async (req, res) => {
-  const id = Number(req.params.id);
+router.post("/", auth, async (req: AuthRequest, res) => {
+  const { name, imageUrl, tierId } = req.body;
+
+  if (!name || !imageUrl || !tierId)
+    return res.status(400).json({ error: "Missing required fields" });
+
   try {
-    const item = await prisma.tierItem.findUnique({ where: { id } });
-    if (!item) return res.status(404).json({ error: "Tier item not found" });
-    res.json(item);
+    const created = await prisma.tierItem.create({
+      data: {
+        name,
+        imageUrl,
+        tier: { connect: { id: tierId } },
+      },
+    });
+    res.status(201).json(created);
   } catch (err) {
-    console.error("❌ Failed to fetch tier item:", err);
-    res.status(500).json({ error: "Failed to fetch tier item" });
+    console.error("❌ Failed to create tier item:", err);
+    res.status(500).json({ error: "Failed to create tier item" });
   }
 });
 
