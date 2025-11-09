@@ -4,6 +4,8 @@ import type { Card, Tier } from "./types";
 import TierRow from "./TierRow";
 import TierSettingsModal from "./TierSettingsModal";
 import AddCardForm from "./AddCardForm";
+import Toast from "./Toast";
+
 
 interface DragState {
   from: "cards" | "tier";
@@ -60,6 +62,12 @@ function suppressDefaultDragImage(e: React.DragEvent) {
 export default function TierListEditor() {
   const nextCardId = React.useRef(1);
   const nextTierId = React.useRef(1);
+
+  const [toast, setToast] = useState<{ message: string; type?: "success" | "error" } | null>(null);
+
+  function showToast(type: "success" | "error", message: string) {
+    setToast({ type, message });
+  }
 
   const [cards, setCards] = useState<Card[]>(() =>
     [
@@ -374,6 +382,7 @@ export default function TierListEditor() {
             name,
           };
           setCards((prev) => [...prev, newCard]);
+          showToast("success", "Successfully added new item!");
         }}
       />
 
@@ -434,6 +443,14 @@ export default function TierListEditor() {
           deleteTier={deleteTier}
           clearTier={clearTier}
           closeSettings={closeSettings}
+        />
+      )}
+
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
         />
       )}
     </div>
