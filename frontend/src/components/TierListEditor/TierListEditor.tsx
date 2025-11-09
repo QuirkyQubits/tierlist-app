@@ -30,7 +30,7 @@ export default function TierListEditor() {
       "https://placehold.co/110x165/darkorchid/fff",
       "https://placehold.co/220/bisque/fff",
       "https://placehold.co/135x150/lightseagreen/fff",
-    ].map((src) => ({ id: makeId("card"), src: src, name: "Default Name" }))
+    ].map((src) => ({ id: makeId("card"), src: src, name: "<name>" }))
   );
 
   const [tiers, setTiers] = useState<Tier[]>(() =>
@@ -292,6 +292,21 @@ export default function TierListEditor() {
     }
   };
 
+  const handleRenameCard = (tierId: string | undefined, cardId: string, newName: string) => {
+    if (tierId) {
+      setTiers((prev) =>
+        prev.map((t) =>
+          t.id === tierId
+            ? { ...t, items: t.items.map((c) => (c.id === cardId ? { ...c, name: newName } : c)) }
+            : t
+        )
+      );
+    } else {
+      setCards((prev) => prev.map((c) => (c.id === cardId ? { ...c, name: newName } : c)));
+    }
+  };
+
+
   // ---------------- Render ----------------
   return (
     <div className="min-h-screen bg-zinc-900 text-white flex flex-col gap-4 p-4">
@@ -317,6 +332,7 @@ export default function TierListEditor() {
             dropOnTier={dropOnTier}
             dropOnCard={dropOnCard}
             onDelete={handleDeleteCard}
+            onRename={handleRenameCard}
           />
         ))}
       </div>
@@ -341,6 +357,7 @@ export default function TierListEditor() {
           dropOnTier={dropOnTier}
           dropOnCard={dropOnCard}
           onDelete={handleDeleteCard}
+          onRename={handleRenameCard}
         />
       </div>
 

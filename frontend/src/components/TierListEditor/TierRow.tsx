@@ -13,6 +13,7 @@ interface Props {
   dropOnTier: (tierId: string) => void;
   dropOnCard: (tierId: string, targetId: string, e: React.DragEvent) => void;
   onDelete: (tierId: string | undefined, cardId: string) => void;
+  onRename: (tierId: string | undefined, cardId: string, newName: string) => void;
 }
 
 export default function TierRow({
@@ -25,7 +26,8 @@ export default function TierRow({
   handleDragOverCard,
   dropOnTier,
   dropOnCard,
-  onDelete
+  onDelete,
+  onRename
 }: Props) {
   const isUnsorted = tier.isUnsorted;
 
@@ -73,6 +75,7 @@ export default function TierRow({
             handleDragOver={(e) => handleDragOverCard(e)}
             handleDrop={(e) => dropOnCard(tier.id, card.id, e)}
             onDelete={onDelete}
+            onRename={onRename}
           />
         ))}
         {tier.items.length === 0 && isUnsorted && (

@@ -10,6 +10,7 @@ interface Props {
   handleDragOver: (e: React.DragEvent) => void;
   handleDrop?: (e: React.DragEvent) => void;
   onDelete: (tierId: string | undefined, cardId: string) => void;
+  onRename: (tierId: string | undefined, cardId: string, newName: string) => void;
 }
 
 export default function TierItem({
@@ -20,7 +21,8 @@ export default function TierItem({
   endDrag,
   handleDragOver,
   handleDrop,
-  onDelete
+  onDelete,
+  onRename
 }: Props) {
   return (
     <div
@@ -44,7 +46,23 @@ export default function TierItem({
         onDragEnd={endDrag}
         className="w-20 h-20 object-cover rounded border border-zinc-700 cursor-grab"
       />
-      <span>Text</span>
+      <span
+        contentEditable
+        suppressContentEditableWarning
+        onBlur={(e) => {
+          const newText = e.currentTarget.textContent?.trim() ?? "";
+          onRename(tierId, card.id, newText);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") e.currentTarget.blur();
+        }}
+        className="mt-1 text-sm text-zinc-300 outline-none cursor-text text-center 
+                   block max-w-[80px] wrap-break-word"
+      >
+        {card.name}
+      </span>
+
+
     </div>
   );
 }
