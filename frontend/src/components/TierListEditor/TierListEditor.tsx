@@ -7,6 +7,10 @@ import AddCardForm from "./AddCardForm";
 import Toast from "./Toast";
 import { api } from "../../lib/axios";
 
+interface TierListEditorProps {
+  initialData?: any | null;
+}
+
 interface DragState {
   from: "cards" | "tier";
   tierId?: string;
@@ -59,7 +63,7 @@ function suppressDefaultDragImage(e: React.DragEvent) {
   e.dataTransfer?.setDragImage(empty, 0, 0);
 }
 
-export default function TierListEditor() {
+export default function TierListEditor({ initialData }: TierListEditorProps) {
   const nextCardId = React.useRef(1);
   const nextTierId = React.useRef(1);
 
@@ -71,22 +75,41 @@ export default function TierListEditor() {
 
   const [cards, setCards] = useState<Card[]>([]);
 
-  const [tiers, setTiers] = useState<Tier[]>(() =>
-    ["S", "A", "B", "C", "D"].map((label, i) => ({
+  const [tiers, setTiers] = useState<Tier[]>(() => {
+    if (initialData?.tiers) {
+      return initialData.tiers.map((t: any, i: number) => ({
+        id: String(nextTierId.current++),
+        backendId: t.id,
+        label: t.name,
+        color: t.color,
+        items: (t.items || []).map((c: any) => ({
+          id: String(nextCardId.current++),
+          backendId: c.id,
+          src: c.imageUrl,
+          name: c.name,
+        })),
+        isUnsorted: false,
+      }));
+    }
+
+    // fallback: create default empty tiers
+    return ["S", "A", "B", "C", "D"].map((label, i) => ({
       id: String(nextTierId.current++),
       label,
       color: getColorByIndex(i),
       items: [],
       isUnsorted: false,
-    }))
-  );
+    }));
+  });
+
+  const [title, setTitle] = useState(initialData?.title || "My Tier List");
+  const [tierListId, setTierListId] = useState(initialData?.id || null);
+
 
   const [activeTierId, setActiveTierId] = useState<string | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [editingLabel, setEditingLabel] = useState("");
   const [dragging, setDragging] = useState<DragState | null>(null);
-  const [title, setTitle] = useState("My Tier List");
-  const [tierListId, setTierListId] = useState<number | null>(null);
   const [deletedItemIds, setDeletedItemIds] = useState<number[]>([]);
 
   const activeTier = useMemo(
