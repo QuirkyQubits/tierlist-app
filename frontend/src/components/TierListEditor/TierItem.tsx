@@ -24,7 +24,8 @@ export default function TierItem({
 }: Props) {
   return (
     <div
-      className="flex items-center"
+      className="tier-item flex flex-col items-center"
+      data-card-id={card.id}
       onDragOver={handleDragOver}
       onDrop={(e) => {
         e.preventDefault();
@@ -43,6 +44,7 @@ export default function TierItem({
         onDragEnd={endDrag}
         className="w-20 h-20 object-cover rounded border border-zinc-700 cursor-grab"
       />
+      <span>Text</span>
     </div>
   );
 }

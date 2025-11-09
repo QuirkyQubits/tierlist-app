@@ -29,26 +29,30 @@ export function insertCardIntoTier(
   tiers: Tier[],
   tierId: string,
   card: Card,
-  targetCardId: string,
-  before: boolean
+  targetCardId?: string,
+  before = true
 ): Tier[] {
-  // Unsorted zone should not modify tiers
-  if (tierId === "cards") return tiers;
+  return tiers.map((tier) => {
+    if (tier.id !== tierId) return tier;
 
-  const copy = tiers.map((t) => {
-    if (t.id !== tierId) return t;
+    const items = [...tier.items];
+    const targetIndex = targetCardId
+      ? items.findIndex((i) => i.id === targetCardId)
+      : -1;
 
-    const items = [...t.items];
-    const targetIdx = items.findIndex((c) => c.id === targetCardId);
-    if (targetIdx === -1) return t;
+    if (targetIndex === -1) {
+      // append at the end
+      items.push(card);
+    } else {
+      // insert before or after the found card
+      const insertAt = before ? targetIndex : targetIndex + 1;
+      items.splice(insertAt, 0, card);
+    }
 
-    const insertAt = before ? targetIdx : targetIdx + 1;
-    items.splice(insertAt, 0, card);
-    return { ...t, items };
+    return { ...tier, items };
   });
-
-  return copy;
 }
+
 
 
 /** Move a card from source to target (general purpose handler) */

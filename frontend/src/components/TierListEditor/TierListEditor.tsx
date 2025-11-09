@@ -104,27 +104,43 @@ export default function TierListEditor() {
   function positionGhost(e: DragEvent) {
     const ghost = document.querySelector(".drag-ghost") as HTMLElement | null;
     const target = e.target as HTMLElement | null;
-    // console.log(`target: ${target?.getHTML()}`);
-
     const draggedImage = document.querySelector(".dragging") as HTMLElement | null;
 
     if (!ghost || !target || !draggedImage) return;
 
-    if (target.tagName === "IMG" && target !== draggedImage) {
-      const { left, width } = target.getBoundingClientRect();
+    // If we're hovering over part of a TierItem (img, text, etc.)
+    const itemContainer = target.closest(".tier-item") as HTMLElement | null;
+    if (itemContainer && itemContainer !== draggedImage) {
+      // Ignore if this is the ghost itself
+      if (itemContainer.classList.contains("drag-ghost")) return;
+
+      const { left, width } = itemContainer.getBoundingClientRect();
       const mid = left + width / 2;
 
-      const container = target.closest(".items");
-      // console.log(`container: ${container?.getHTML()}`);
+      const container = itemContainer.closest(".items");
+      if (!container) return;
 
-      if (container && ghost.parentElement !== container) container.appendChild(ghost);
+      // Ensure the ghost is in the same container
+      if (ghost.parentElement !== container) container.appendChild(ghost);
 
-      if (e.clientX < mid) target.before(ghost);
-      else target.after(ghost);
-    } else if (target.classList.contains("items")) {
-      target.appendChild(ghost);
+      const insertBefore = e.clientX < mid;
+
+      // Prevent flicker: only move ghost if its position actually changes
+      if (insertBefore && ghost.nextElementSibling !== itemContainer) {
+        itemContainer.before(ghost);
+      } else if (!insertBefore && ghost.previousElementSibling !== itemContainer) {
+        itemContainer.after(ghost);
+      }
+
+      return;
+    }
+
+    // If hovering over an empty tier area
+    if (target.classList.contains("items")) {
+      if (ghost.parentElement !== target) target.appendChild(ghost);
     }
   }
+
 
 
   // ---------------- Drag logic ----------------
@@ -168,14 +184,51 @@ export default function TierListEditor() {
   const dropOnTier = (tierId: string) => {
     if (!dragging) return;
 
-    const { tiers: newTiers, cards: newCards } = moveCardBetween(
-      tiers,
-      cards,
-      dragging,
-      tierId
-    );
+    // Special case: unsorted pseudo-tier
+    if (tierId === "cards") {
+      const ghost = document.querySelector(".drag-ghost") as HTMLElement | null;
+      const container = ghost?.parentElement;
+      if (!ghost || !container) return;
+
+      // Find the next sibling card (if any)
+      const next = ghost.nextElementSibling as HTMLElement | null;
+      const nextCardId = next?.dataset?.cardId || undefined;
+
+      // Remove from all tiers
+      const newTiers = removeCardFromTiers(tiers, dragging.card.id);
+
+      // Insert into unsorted cards
+      let newCards = cards.filter((c) => c.id !== dragging.card.id);
+
+      if (nextCardId) {
+        const idx = newCards.findIndex((c) => c.id === nextCardId);
+        newCards.splice(idx, 0, dragging.card);
+      } else {
+        newCards.push(dragging.card);
+      }
+
+      setTiers(newTiers);
+      setCards(newCards);
+      endDrag();
+      return;
+    }
+
+    // Normal tier logic below
+    const ghost = document.querySelector(".drag-ghost") as HTMLElement | null;
+    const container = ghost?.parentElement;
+    if (!ghost || !container) return;
+
+    const next = ghost.nextElementSibling as HTMLElement | null;
+    const nextCardId = next?.dataset?.cardId || undefined;
+
+    let newTiers = removeCardFromTiers(tiers, dragging.card.id);
+    newTiers = insertCardIntoTier(newTiers, tierId, dragging.card, nextCardId, true);
     setTiers(newTiers);
-    setCards(newCards);
+
+    if (dragging.from === "cards") {
+      setCards((p) => p.filter((c) => c.id !== dragging.card.id));
+    }
+
     endDrag();
   };
 
@@ -183,21 +236,23 @@ export default function TierListEditor() {
     e.preventDefault();
     if (!dragging) return;
 
-    const rect = (e.target as HTMLElement).getBoundingClientRect();
+    const itemContainer = e.currentTarget as HTMLElement;
+    const rect = itemContainer.getBoundingClientRect();
     const before = e.clientX < rect.left + rect.width / 2;
 
-    // special case: unsorted pseudo-tier
+    // --- unsorted / "cards" pseudo-tier ---
     if (tierId === "cards") {
-      // remove from any tier it might have been in
+      // remove from any tier
       const newTiers = removeCardFromTiers(tiers, dragging.card.id);
 
-      // start from cards but remove the dragged one
+      // start from current cards but remove the dragged one
       let newCards = cards.filter((c) => c.id !== dragging.card.id);
 
-      // find where to insert relative to the target card
+      // find the card we dropped on
       const targetIdx = newCards.findIndex((c) => c.id === targetCardId);
+
       if (targetIdx === -1) {
-        // if somehow we didn't find it, just push
+        // if for some reason we can't find it, fall back to push
         newCards.push(dragging.card);
       } else {
         const insertAt = before ? targetIdx : targetIdx + 1;
@@ -210,19 +265,18 @@ export default function TierListEditor() {
       return;
     }
 
-    // normal tier-to-tier logic
+    // --- normal tier-to-tier case ---
     let newTiers = removeCardFromTiers(tiers, dragging.card.id);
     newTiers = insertCardIntoTier(newTiers, tierId, dragging.card, targetCardId, before);
     setTiers(newTiers);
 
-    // if it came from unsorted, remove it from cards
+    // if we dragged from unsorted, remove it there too
     if (dragging.from === "cards") {
       setCards((p) => p.filter((c) => c.id !== dragging.card.id));
     }
 
     endDrag();
   };
-
 
   const handleDeleteCard = (tierId: string | undefined, cardId: string) => {
     if (tierId) {
