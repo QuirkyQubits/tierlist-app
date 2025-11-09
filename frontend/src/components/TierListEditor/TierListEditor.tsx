@@ -104,6 +104,7 @@ export default function TierListEditor() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [editingLabel, setEditingLabel] = useState("");
   const [dragging, setDragging] = useState<DragState | null>(null);
+  const [title, setTitle] = useState("My Tier List");
 
   const activeTier = useMemo(
     () => tiers.find((t) => t.id === activeTierId) ?? null,
@@ -385,6 +386,18 @@ export default function TierListEditor() {
           showToast("success", "Successfully added new item!");
         }}
       />
+
+      <h2
+        contentEditable
+        suppressContentEditableWarning
+        onBlur={(e) => setTitle(e.currentTarget.textContent?.trim() || "Untitled")}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") e.preventDefault(); // prevent line breaks
+        }}
+        className="text-3xl font-bold text-center mb-4 outline-none cursor-text"
+      >
+        {title}
+      </h2>
 
       {/* Tier rows */}
       <div className="w-full border border-zinc-800 rounded bg-zinc-800/40">
