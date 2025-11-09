@@ -12,6 +12,7 @@ interface Props {
   handleDragOverCard: (e: React.DragEvent) => void;
   dropOnTier: (tierId: string) => void;
   dropOnCard: (tierId: string, targetId: string, e: React.DragEvent) => void;
+  onDelete: (tierId: string | undefined, cardId: string) => void;
 }
 
 export default function TierRow({
@@ -24,6 +25,7 @@ export default function TierRow({
   handleDragOverCard,
   dropOnTier,
   dropOnCard,
+  onDelete
 }: Props) {
   return (
     <div className="flex border-b border-zinc-900 last:border-none">
@@ -54,6 +56,7 @@ export default function TierRow({
             endDrag={endDrag}
             handleDragOver={(e) => handleDragOverCard(e)}
             handleDrop={(e) => dropOnCard(tier.id, card.id, e)}
+            onDelete={onDelete}
           />
         ))}
       </div>

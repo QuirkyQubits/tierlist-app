@@ -9,6 +9,7 @@ interface Props {
   handleDragOver: (e: React.DragEvent) => void;
   dropOnUnsorted: (e: React.DragEvent) => void;
   handleDropOnCard: (e: React.DragEvent, targetCardId: string) => void;
+  onDelete: (tierId: string | undefined, cardId: string) => void;
 }
 
 export default function UnsortedZone({
@@ -18,6 +19,7 @@ export default function UnsortedZone({
   handleDragOver,
   dropOnUnsorted,
   handleDropOnCard,
+  onDelete
 }: Props) {
   return (
     <div
@@ -36,6 +38,7 @@ export default function UnsortedZone({
             endDrag={endDrag}
             handleDragOver={handleDragOver}
             handleDrop={(e) => handleDropOnCard(e, card.id)}
+            onDelete={onDelete}
           />
         ))}
         {cards.length === 0 && <p className="text-xs text-zinc-500 italic">Drop cards here</p>}

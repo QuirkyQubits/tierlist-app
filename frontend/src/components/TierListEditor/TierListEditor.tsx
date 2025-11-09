@@ -197,6 +197,20 @@ export default function TierListEditor() {
     endDrag();
   };
 
+  const handleDeleteCard = (tierId: string | undefined, cardId: string) => {
+    if (tierId) {
+      // Delete from tier
+      setTiers((prev) =>
+        prev.map((t) =>
+          t.id === tierId ? { ...t, items: t.items.filter((c) => c.id !== cardId) } : t
+        )
+      );
+    } else {
+      // Delete from unsorted
+      setCards((prev) => prev.filter((c) => c.id !== cardId));
+    }
+  };
+
   const handleDragOverUnsorted = (e: React.DragEvent) => {
     e.preventDefault();
     if (dragging) positionGhost(e.nativeEvent);
@@ -264,6 +278,7 @@ export default function TierListEditor() {
             handleDragOverCard={handleDragOverCard}
             dropOnTier={dropOnTier}
             dropOnCard={dropOnCard}
+            onDelete={handleDeleteCard}
           />
         ))}
       </div>
@@ -276,6 +291,7 @@ export default function TierListEditor() {
         handleDragOver={handleDragOverUnsorted}
         dropOnUnsorted={dropOnUnsorted}
         handleDropOnCard={handleDropOnUnsortedCard}
+        onDelete={handleDeleteCard}
       />
 
       {/* Settings modal */}

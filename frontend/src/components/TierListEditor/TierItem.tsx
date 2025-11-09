@@ -9,6 +9,7 @@ interface Props {
   endDrag: () => void;
   handleDragOver: (e: React.DragEvent) => void;
   handleDrop?: (e: React.DragEvent) => void;
+  onDelete: (tierId: string | undefined, cardId: string) => void;
 }
 
 export default function TierItem({
@@ -19,6 +20,7 @@ export default function TierItem({
   endDrag,
   handleDragOver,
   handleDrop,
+  onDelete
 }: Props) {
   return (
     <div
@@ -28,6 +30,10 @@ export default function TierItem({
         e.preventDefault();
         e.stopPropagation();
         handleDrop?.(e);
+      }}
+      onContextMenu={(e) => {
+        e.preventDefault(); // stop browser menu
+        onDelete(tierId, card.id); // trigger delete
       }}
     >
       <img
