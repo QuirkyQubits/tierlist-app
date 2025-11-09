@@ -3,6 +3,7 @@ import { getColorByIndex } from "./constants";
 import type { Card, Tier } from "./types";
 import TierRow from "./TierRow";
 import TierSettingsModal from "./TierSettingsModal";
+import AddCardForm from "./AddCardForm";
 
 interface DragState {
   from: "cards" | "tier";
@@ -364,6 +365,17 @@ export default function TierListEditor() {
       >
         TierList Maker
       </h1>
+
+      <AddCardForm
+        onAdd={(name, src) => {
+          const newCard = {
+            id: String(nextCardId.current++),
+            src,
+            name,
+          };
+          setCards((prev) => [...prev, newCard]);
+        }}
+      />
 
       {/* Tier rows */}
       <div className="w-full border border-zinc-800 rounded bg-zinc-800/40">
