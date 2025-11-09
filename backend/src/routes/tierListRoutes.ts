@@ -88,6 +88,111 @@ router.get("/:id", auth, async (req: AuthRequest, res) => {
 });
 
 
+router.put("/:id", auth, async (req: AuthRequest, res) => {
+  const tierListId = Number(req.params.id);
+  const { title, tiers, deletedItemIds } = req.body;
+  const userId = req.user!.userId;
+
+  try {
+    // 1Verify that the tier list belongs to this user
+    const existing = await prisma.tierList.findUnique({
+      where: { id: tierListId },
+      include: { tiers: { include: { items: true } } },
+    });
+
+    if (!existing || existing.userId !== userId)
+      return res.status(403).json({ error: "Unauthorized or not found" });
+
+    // Process deleted items
+    if (deletedItemIds?.length) {
+      await prisma.tierItem.deleteMany({
+        where: { id: { in: deletedItemIds } },
+      });
+    }
+
+    // Update title (and any TierList-level fields)
+    await prisma.tierList.update({
+      where: { id: tierListId },
+      data: { title },
+    });
+
+    // Loop through tiers in the payload
+    for (const tier of tiers) {
+      let tierRecord;
+
+      if (tier.id) {
+        // Existing tier: update label/color/order if changed
+        tierRecord = await prisma.tier.update({
+          where: { id: tier.id },
+          data: {
+            name: tier.name,
+            color: tier.color,
+            order: tier.order,
+          },
+        });
+      } else {
+        // New tier: create it
+        tierRecord = await prisma.tier.create({
+          data: {
+            name: tier.name,
+            color: tier.color,
+            order: tier.order,
+            tierListId,
+          },
+        });
+      }
+
+      // Loop through items for this tier
+      for (const item of tier.items) {
+        if (!item.id) {
+          // 🆕 Create new item
+          await prisma.tierItem.create({
+            data: {
+              name: item.name,
+              imageUrl: item.imageUrl,
+              tierId: tierRecord.id,
+            },
+          });
+        } else {
+          // Update existing item (only if changed)
+          const existingItem = existing.tiers
+            .flatMap((t) => t.items)
+            .find((i) => i.id === item.id);
+
+          if (
+            existingItem &&
+            (existingItem.name !== item.name ||
+              existingItem.imageUrl !== item.imageUrl ||
+              existingItem.tierId !== tierRecord.id)
+          ) {
+            await prisma.tierItem.update({
+              where: { id: item.id },
+              data: {
+                name: item.name,
+                imageUrl: item.imageUrl,
+                tierId: tierRecord.id,
+              },
+            });
+          }
+        }
+      }
+    }
+
+    // Return the fully updated tier list
+    const updated = await prisma.tierList.findUnique({
+      where: { id: tierListId },
+      include: { tiers: { include: { items: true } } },
+    });
+
+    res.json(updated);
+  } catch (err) {
+    console.error("❌ Failed to update tier list:", err);
+    res.status(500).json({ error: "Failed to update tier list" });
+  }
+});
+
+
+
 router.delete("/:id", auth, async (req: AuthRequest, res) => {
   const id = Number(req.params.id);
   const userId = req.user!.userId;
