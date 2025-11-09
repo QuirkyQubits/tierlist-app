@@ -45,6 +45,7 @@ enum Visibility {
 model Tier {
   id         Int        @id @default(autoincrement())
   name       String // e.g. "S", "A", "B", "C"
+  color      String
   order      Int // determines row order
   tierList   TierList   @relation(fields: [tierListId], references: [id], onDelete: Cascade)
   tierListId Int
