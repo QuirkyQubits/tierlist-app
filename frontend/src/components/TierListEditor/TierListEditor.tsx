@@ -121,7 +121,6 @@ export default function TierListEditor({ initialData }: TierListEditorProps) {
   async function saveTierList() {
     try {
       // Build the payload from current React state
-      const deletedItemIds: number[] = []; // if you later track deletions, include them here
 
       const preparedTiers = [];
       for (const [i, tier] of tiers.entries()) {
@@ -433,23 +432,34 @@ export default function TierListEditor({ initialData }: TierListEditorProps) {
   };
 
   const handleDeleteCard = (tierId: string | undefined, cardId: string) => {
-    const numericId = Number(cardId);
-    if (!isNaN(numericId)) {
+    // Find the card BEFORE removing it
+    const card =
+      tiers.flatMap((t) => t.items).find((c) => c.id === cardId) ||
+      cards.find((c) => c.id === cardId);
+
+    // Track the backend ID for persistence
+    if (card && typeof card.backendId === "number") {
+      const backendId: number = card.backendId;
       setDeletedItemIds((prev) =>
-        prev.includes(numericId) ? prev : [...prev, numericId]
+        prev.includes(backendId) ? prev : [...prev, backendId]
       );
     }
 
+    // Remove it from local state (UI)
     if (tierId) {
-      // Delete from tier
-      setTiers((prev) =>
-        prev.map((t) =>
-          t.id === tierId ? { ...t, items: t.items.filter((c) => c.id !== cardId) } : t
-        )
-      );
+      // Remove from the tier it belongs to
+      setTiers((prev) => {
+        return prev.map((t) =>
+          t.id === tierId
+            ? { ...t, items: t.items.filter((c) => c.id !== cardId) }
+            : t
+        );
+      });
     } else {
-      // Delete from unsorted
-      setCards((prev) => prev.filter((c) => c.id !== cardId));
+      // Remove from unsorted zone
+      setCards((prev) => {
+        return prev.filter((c) => c.id !== cardId);
+      });
     }
   };
 
