@@ -199,6 +199,9 @@ export default function TierListEditor({ initialData }: TierListEditorProps) {
 
       setTitle(updated.title);
       setTierListId(updated.id);
+      
+      // Clear deletions now that save succeeded
+      setDeletedItemIds([]);
     } catch (err: any) {
       console.error("❌ Failed to save tier list:", err);
       showToast("error", "Failed to save tier list");
