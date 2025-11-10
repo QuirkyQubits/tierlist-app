@@ -111,6 +111,7 @@ export default function TierListEditor({ initialData }: TierListEditorProps) {
   const [editingLabel, setEditingLabel] = useState("");
   const [dragging, setDragging] = useState<DragState | null>(null);
   const [deletedItemIds, setDeletedItemIds] = useState<number[]>([]);
+  const [deletedTierIds, setDeletedTierIds] = useState<number[]>([]);
 
   const activeTier = useMemo(
     () => tiers.find((t) => t.id === activeTierId) ?? null,
@@ -121,7 +122,6 @@ export default function TierListEditor({ initialData }: TierListEditorProps) {
   async function saveTierList() {
     try {
       // Build the payload from current React state
-
       const preparedTiers = [];
       for (const [i, tier] of tiers.entries()) {
         const items = [];
@@ -164,6 +164,7 @@ export default function TierListEditor({ initialData }: TierListEditorProps) {
         title,
         tiers: preparedTiers,
         deletedItemIds,
+        deletedTierIds,
       };
 
       // Choose the correct endpoint
@@ -202,6 +203,7 @@ export default function TierListEditor({ initialData }: TierListEditorProps) {
       
       // Clear deletions now that save succeeded
       setDeletedItemIds([]);
+      setDeletedTierIds([]);
     } catch (err: any) {
       console.error("❌ Failed to save tier list:", err);
       showToast("error", "Failed to save tier list");
@@ -231,6 +233,16 @@ export default function TierListEditor({ initialData }: TierListEditorProps) {
 
   const deleteTier = () => {
     if (!activeTier) return;
+
+    // Track backend ID if this tier existed in the DB
+    if (typeof activeTier.backendId === "number") {
+      const backendId: number = activeTier.backendId; // ✅ explicitly number
+      setDeletedTierIds((prev) =>
+        prev.includes(backendId) ? prev : [...prev, backendId]
+      );
+    }
+
+    // Move the tier’s cards back to unsorted and remove the tier
     setCards((p) => [...p, ...activeTier.items]);
     setTiers((p) => p.filter((t) => t.id !== activeTier.id));
     closeSettings();

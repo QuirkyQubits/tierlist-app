@@ -14,8 +14,6 @@ router.post("/new-tierlist", auth, async (req: AuthRequest, res) => {
       .status(400)
       .json({ error: "Tier list must have a title and tiers." });
 
-  console.log("🧾 Incoming payload:", JSON.stringify(req.body, null, 2));
-
   try {
     const newTierList = await prisma.tierList.create({
       data: {
@@ -98,11 +96,11 @@ router.get("/:id", auth, async (req: AuthRequest, res) => {
 
 router.put("/:id", auth, async (req: AuthRequest, res) => {
   const tierListId = Number(req.params.id);
-  const { title, tiers, deletedItemIds } = req.body;
+  const { title, tiers, deletedItemIds, deletedTierIds } = req.body;
   const userId = req.user!.userId;
 
   try {
-    // 1Verify that the tier list belongs to this user
+    // Verify that the tier list belongs to this user
     const existing = await prisma.tierList.findUnique({
       where: { id: tierListId },
       include: { tiers: { include: { items: true } } },
@@ -110,6 +108,13 @@ router.put("/:id", auth, async (req: AuthRequest, res) => {
 
     if (!existing || existing.userId !== userId)
       return res.status(403).json({ error: "Unauthorized or not found" });
+
+    // Process deleted tiers (cascade removes tierItems automatically)
+    if (Array.isArray(deletedTierIds) && deletedTierIds.length > 0) {
+      await prisma.tier.deleteMany({
+        where: { id: { in: deletedTierIds } },
+      });
+    }
 
     // Process deleted items
     if (deletedItemIds?.length) {
