@@ -42,7 +42,7 @@ export default function TierRow({
       {/* Tier label cell */}
       {!isUnsorted ? (
         <div
-          className="w-28 flex items-center justify-center font-semibold text-sm"
+          className="w-28 flex items-center justify-center font-semibold text-sm text-black"
           style={{ backgroundColor: tier.color }}
         >
           {tier.label}
