@@ -1,7 +1,4 @@
-# TierList Maker 🧱
+## 🚀 Project Overview
 
-A simple fullstack app for creating and saving custom tier lists, written in Node.js for the backend and React/Tailwind CSS for the frontend.
-
-## Screenshot
-
-![Screenshot of TierList Maker's main UI](public/images/tierlist-main-UI.png)
+See screenshots and the full project overview here:  
+👉 [Tierlist-app on GitHub Pages](https://quirkyqubits.github.io/tierlist.html)
