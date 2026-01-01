@@ -126,7 +126,7 @@ export default function TierListEditor({ initialData }: TierListEditorProps) {
       for (const [i, tier] of tiers.entries()) {
         const items = [];
 
-        for (const card of tier.items) {
+        for (const [j, card] of tier.items.entries()) {
           let imageUrl = card.src;
 
           // Upload image if it's new (blob or data URL)
@@ -148,6 +148,7 @@ export default function TierListEditor({ initialData }: TierListEditorProps) {
             id: card.backendId,
             name: card.name,
             imageUrl,
+            order: j,
           });
         }
 

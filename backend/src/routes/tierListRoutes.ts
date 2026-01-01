@@ -164,29 +164,19 @@ router.put("/:id", auth, async (req: AuthRequest, res) => {
               name: item.name,
               imageUrl: item.imageUrl,
               tierId: tierRecord.id,
+              order: item.order,
             },
           });
         } else {
-          // Update existing item (only if changed)
-          const existingItem = existing.tiers
-            .flatMap((t) => t.items)
-            .find((i) => i.id === item.id);
-
-          if (
-            existingItem &&
-            (existingItem.name !== item.name ||
-              existingItem.imageUrl !== item.imageUrl ||
-              existingItem.tierId !== tierRecord.id)
-          ) {
-            await prisma.tierItem.update({
-              where: { id: item.id },
-              data: {
-                name: item.name,
-                imageUrl: item.imageUrl,
-                tierId: tierRecord.id,
-              },
-            });
-          }
+          await prisma.tierItem.update({
+            where: { id: item.id },
+            data: {
+              name: item.name,
+              imageUrl: item.imageUrl,
+              tierId: tierRecord.id,
+              order: item.order,
+            },
+          });
         }
       }
     }
@@ -194,7 +184,16 @@ router.put("/:id", auth, async (req: AuthRequest, res) => {
     // Return the fully updated tier list
     const updated = await prisma.tierList.findUnique({
       where: { id: tierListId },
-      include: { tiers: { include: { items: true } } },
+      include: {
+        tiers: {
+          orderBy: { order: "asc" },
+          include: {
+            items: {
+              orderBy: { order: "asc" },
+            },
+          },
+        },
+      },
     });
 
     res.json(updated);

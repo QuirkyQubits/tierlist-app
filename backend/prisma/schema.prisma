@@ -58,4 +58,5 @@ model TierItem {
   imageUrl    String
   tier        Tier    @relation(fields: [tierId], references: [id], onDelete: Cascade)
   tierId      Int
+  order       Int
 }
