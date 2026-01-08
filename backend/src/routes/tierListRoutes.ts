@@ -1,13 +1,19 @@
 import express from "express";
 import { auth, type AuthRequest } from "../auth.js";
 import { prisma } from "../utils/prisma.js";
+import type { CreateTierInput, CreateTierItemInput, CreateTierListInput } from "../types/tierlist.js";
 
 const router = express.Router();
 
 
 router.post("/new-tierlist", auth, async (req: AuthRequest, res) => {
   const userId = req.user!.userId;
-  const { title, description, visibility = "PRIVATE", tiers = [] } = req.body;
+  const { 
+    title,
+    description,
+    visibility = "PRIVATE",
+    tiers = []
+  } = req.body as CreateTierListInput;
 
   if (!title || !tiers.length)
     return res
@@ -22,14 +28,15 @@ router.post("/new-tierlist", auth, async (req: AuthRequest, res) => {
         visibility,
         userId,
         tiers: {
-          create: tiers.map((tier: any) => ({
+          create: tiers.map((tier: CreateTierInput, tierIndex: number) => ({
             name: tier.name,
             color: tier.color,
-            order: tier.order,
+            order: tierIndex,
             items: {
-              create: (tier.items || []).map((item: any) => ({
+              create: tier.items.map((item: CreateTierItemInput, itemIndex: number) => ({
                 name: item.name,
                 imageUrl: item.imageUrl,
+                order: itemIndex,
               })),
             },
           })),
